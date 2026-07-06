@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    show-sql: false
+
+app:
+  security:
+    jwt:
+      # obligatorio en prod: si no viene, que reviente al arrancar y no con un secreto por defecto
+      secret: ${JWT_SECRET}
+
+logging:
+  level:
+    com.cuscatlan.coworking: INFO

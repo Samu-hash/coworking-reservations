@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: coworking
+      POSTGRES_USER: coworking
+      POSTGRES_PASSWORD: coworking
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coworking -d coworking"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # mock del gateway de pago para poder probar el circuit breaker a mano
+  payments-mock:
+    image: wiremock/wiremock:3.9.2
+    command: ["--verbose"]
+    volumes:
+      - ./docker/wiremock:/home/wiremock
+    ports:
+      - "8081:8080"
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      payments-mock:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/coworking
+      SPRING_DATASOURCE_USERNAME: coworking
+      SPRING_DATASOURCE_PASSWORD: coworking
+      APP_PAYMENTS_BASE_URL: http://payments-mock:8080
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en .env (min 32 chars)}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  pgdata:

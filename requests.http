@@ -1,0 +1,84 @@
+# Flujo de ejemplo de la API. Se corre con REST Client (VS Code) o el HTTP client de IntelliJ.
+# Los tokens se guardan solos entre requests. Ajustá las fechas si ya pasaron (validamos @Future).
+
+@host = http://localhost:8080
+
+### 1. Registro de un USER
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{ "email": "ana@test.sv", "password": "secret1", "fullName": "Ana Prueba" }
+
+### 2. Login del ADMIN sembrado por Flyway -> guarda el token
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@coworking.sv", "password": "admin1234" }
+
+> {% client.global.set("adminToken", response.body.accessToken); %}
+
+### 3. Login del USER -> guarda su token
+# @name loginUser
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "ana@test.sv", "password": "secret1" }
+
+> {% client.global.set("userToken", response.body.accessToken); %}
+
+### 4. El ADMIN crea un espacio (un USER acá recibiria 403)
+POST {{host}}/spaces
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{ "name": "Sala Santa Ana", "type": "MEETING_ROOM", "capacity": 10, "location": "Piso 4", "hourlyRate": 15.00 }
+
+### 5. El USER lista los espacios
+GET {{host}}/spaces
+Authorization: Bearer {{userToken}}
+
+### 6. El USER crea una reserva (espacio 1 = Sala Izalco, sembrado)
+# @name crearReserva
+POST {{host}}/reservations
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{ "spaceId": 1, "startTime": "2027-05-10T09:00:00Z", "endTime": "2027-05-10T11:00:00Z" }
+
+> {% client.global.set("reservaId", response.body.id); %}
+
+### 7. Intento de solape en el mismo espacio y horario -> se espera 409
+POST {{host}}/reservations
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{ "spaceId": 1, "startTime": "2027-05-10T10:00:00Z", "endTime": "2027-05-10T12:00:00Z" }
+
+### 8. Confirmar la reserva -> valida el pago (circuit breaker) y dispara la notificacion async
+POST {{host}}/reservations/{{reservaId}}/confirm
+Authorization: Bearer {{userToken}}
+
+### 9. El USER ve sus reservas
+GET {{host}}/reservations/mine
+Authorization: Bearer {{userToken}}
+
+### 10. Un id ajeno / inexistente -> se espera 404 (no 403, para no filtrar existencia)
+GET {{host}}/reservations/999999
+Authorization: Bearer {{userToken}}
+
+### 11. El ADMIN lista todas, filtrando por estado
+GET {{host}}/reservations?status=CONFIRMED
+Authorization: Bearer {{adminToken}}
+
+### 12. Reporte de ocupacion (cacheado). Corrélo dos veces para ver la cache.
+GET {{host}}/reports/occupancy?from=2027-05-01&to=2027-05-31
+Authorization: Bearer {{adminToken}}
+
+### 13. Cancelar la reserva
+POST {{host}}/reservations/{{reservaId}}/cancel
+Authorization: Bearer {{userToken}}
+
+### 14. Estado del circuit breaker (solo ADMIN)
+GET {{host}}/actuator/circuitbreakers
+Authorization: Bearer {{adminToken}}

@@ -1,0 +1,8 @@
+spring:
+  jpa:
+    show-sql: false
+
+app:
+  security:
+    jwt:
+      secret: clave-de-integracion-con-mas-de-treinta-y-dos-caracteres

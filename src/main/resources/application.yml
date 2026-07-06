@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: coworking-reservations
+  profiles:
+    active: dev
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+
+app:
+  security:
+    jwt:
+      # el secreto real viene por perfil/env; este default solo aplica en dev
+      secret: ${JWT_SECRET:cambia-esto-en-produccion-hace-falta-256-bits-minimo-para-hs256}
+      access-ttl: 1h
+      issuer: coworking-api
+  payment-gateway:
+    base-url: ${APP_PAYMENTS_BASE_URL:http://localhost:8081}
+    connect-timeout: 2s
+    read-timeout: 3s
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentGateway:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        wait-duration-in-open-state: 10s
+        register-health-indicator: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    circuitbreakers:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Coworking Reservations API
+    description: Prueba tecnica - gestion de reservas de espacios
