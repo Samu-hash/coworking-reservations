@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: coworking
       POSTGRES_PASSWORD: coworking
     ports:
-      - "5432:5432"
+      - "15432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U coworking -d coworking"]
       interval: 5s
@@ -22,7 +22,7 @@ services:
     volumes:
       - ./docker/wiremock:/home/wiremock
     ports:
-      - "8081:8080"
+      - "18081:8080"
 
   app:
     build: .
@@ -39,7 +39,7 @@ services:
       APP_PAYMENTS_BASE_URL: http://payments-mock:8080
       JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en .env (min 32 chars)}
     ports:
-      - "8080:8080"
+      - "18080:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || exit 1"]
       interval: 10s
