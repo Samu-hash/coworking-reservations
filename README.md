@@ -27,6 +27,11 @@ intento de solape, confirmar, reporte). Se corre desde VS Code (REST Client) o I
 Para desarrollo sin Docker: necesitás un Postgres local en `localhost:5432` (base/usuario/clave
 `coworking`) y `./mvnw spring-boot:run` con el perfil `dev` (que es el default).
 
+> **Build/tests:** basta un JDK **17 o superior** (con `javac`; el proyecto compila a Java 17 vía
+> `--release 17`). `./mvnw verify` corre con cualquier JDK 17–25 **sin exportar `JAVA_HOME`**: los
+> tests fuerzan `net.bytebuddy.experimental=true` (ver `pom.xml`) para que Mockito pueda mockear
+> clases concretas cuando Maven corre con un JDK más nuevo que el ByteBuddy de Spring Boot 3.3.
+
 ## Cómo está organizado
 
 Arquitectura en capas (controller / service / repository / dto / mapper), pero agrupada

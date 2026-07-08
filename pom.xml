@@ -176,6 +176,21 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- Mockito inline (el mock maker por defecto) retransforma clases ya cargadas en la
+                 JVM. Si Maven corre con un JDK más nuevo que el que soporta el ByteBuddy de Spring
+                 Boot 3.3 (1.14.x soporta hasta bytecode 23/67), la retransformación revienta con
+                 "Java N (69) is not supported ... set net.bytebuddy.experimental as a VM property".
+                 El flag deja a ByteBuddy leer bytecode más nuevo; es inocuo con JDK 17. Así
+                 `./mvnw verify` pasa con cualquier JDK sin exportar JAVA_HOME. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
             <!-- las pruebas de integración (*IT) corren en la fase verify con Testcontainers;
                  el build de la imagen las salta (-DskipTests) porque necesitan un Docker daemon -->
             <plugin>
@@ -188,6 +203,9 @@
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <api.version>${docker.api.version}</api.version>
+                        <!-- defensivo: hoy ningún *IT usa Mockito, pero mantiene el build a
+                             prueba de JDK nuevo si se agrega un @MockBean de clase concreta -->
+                        <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
