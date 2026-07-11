@@ -1,7 +1,8 @@
 # Flujo de ejemplo de la API. Se corre con REST Client (VS Code) o el HTTP client de IntelliJ.
 # Los tokens se guardan solos entre requests. Ajustá las fechas si ya pasaron (validamos @Future).
 
-@host = http://localhost:8080
+# En Docker la app queda en 18080; si la corrés nativa (perfil dev) es 8080.
+@host = http://localhost:18080
 
 ### 1. Registro de un USER
 POST {{host}}/auth/register

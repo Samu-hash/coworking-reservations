@@ -1,8 +1,7 @@
 # Coworking Reservations API
 
 Microservicio REST para gestionar reservas de espacios de coworking (salas, puestos, cabinas).
-Prueba técnica. Traté de que fuera una base que se pueda llevar a producción, no un demo que
-"funciona y ya": donde había que elegir, prioricé que la concurrencia, la seguridad y la resiliencia
+Prueba técnica. En el servicio prioricé que la concurrencia, la seguridad y la resiliencia
 estuvieran sólidas antes que sumar features a medias.
 
 ## Cómo lo corro
@@ -14,12 +13,12 @@ cp .env.example .env          # define JWT_SECRET (mínimo 32 chars)
 docker compose up --build
 ```
 
-La app queda en `http://localhost:8080`. El compose no arranca la app hasta que Postgres pasa su
+La app queda en `http://localhost:18080`. El compose no arranca la app hasta que Postgres pasa su
 healthcheck, así que no hay carrera de "la app levantó antes que la base". Flyway corre las
 migraciones al arrancar (incluida la extensión `btree_gist` y la constraint de anti-solape).
 
-- Swagger UI: `http://localhost:8080/swagger-ui.html` (hay un botón *Authorize* para pegar el token).
-- Actuator: `http://localhost:8080/actuator/health`, `/actuator/circuitbreakers` (este último pide token de ADMIN).
+- Swagger UI: `http://localhost:18080/swagger-ui.html` (hay un botón *Authorize* para pegar el token).
+- Actuator: `http://localhost:18080/actuator/health`, `/actuator/circuitbreakers` (este último pide token de ADMIN).
 - Admin sembrado por Flyway para poder operar de una: **admin@coworking.sv / admin1234**.
 
 En `requests.http` está el flujo completo de ejemplo (registro, login, crear espacio, reservar,
@@ -27,6 +26,11 @@ intento de solape, confirmar, reporte). Se corre desde VS Code (REST Client) o I
 
 Para desarrollo sin Docker: necesitás un Postgres local en `localhost:5432` (base/usuario/clave
 `coworking`) y `./mvnw spring-boot:run` con el perfil `dev` (que es el default).
+
+> **Build/tests:** basta un JDK **17 o superior** (con `javac`; el proyecto compila a Java 17 vía
+> `--release 17`). `./mvnw verify` corre con cualquier JDK 17–25 **sin exportar `JAVA_HOME`**: los
+> tests fuerzan `net.bytebuddy.experimental=true` (ver `pom.xml`) para que Mockito pueda mockear
+> clases concretas cuando Maven corre con un JDK más nuevo que el ByteBuddy de Spring Boot 3.3.
 
 ## Cómo está organizado
 
